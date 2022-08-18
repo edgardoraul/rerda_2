@@ -1,0 +1,15 @@
+<svg id="Componente_1_1" data-name="Componente 1 – 1" xmlns="http://www.w3.org/2000/svg" width="37.193" height="18.134" viewBox="0 0 37.193 18.134">
+  <g id="Grupo_914" data-name="Grupo 914" transform="translate(3744.51 -5868.595)">
+    <rect id="Rectángulo_754" data-name="Rectángulo 754" width="17" height="2" rx="0.3" transform="translate(-3744.51 5869.729)" fill="#f8f4f2"/>
+    <rect id="Rectángulo_755" data-name="Rectángulo 755" width="14" height="2" rx="0.3" transform="translate(-3744.51 5876.729)" fill="#f8f4f2"/>
+    <rect id="Rectángulo_756" data-name="Rectángulo 756" width="17" height="2" rx="0.3" transform="translate(-3744.51 5883.729)" fill="#f8f4f2"/>
+  </g>
+  <g id="Grupo_1992" data-name="Grupo 1992" transform="translate(19.06)">
+    <path id="Trazado_10739" data-name="Trazado 10739" d="M3092.14-1262.187l-3.377-3.377a8.114,8.114,0,0,0,1.812-5.115h0a8.166,8.166,0,0,0-8.157-8.156,8.166,8.166,0,0,0-8.155,8.156,8.165,8.165,0,0,0,8.156,8.156,8.115,8.115,0,0,0,5.114-1.812l3.377,3.378a.868.868,0,0,0,.616.255.867.867,0,0,0,.615-.255A.87.87,0,0,0,3092.14-1262.187ZM3076-1270.679a6.423,6.423,0,0,1,6.414-6.415,6.424,6.424,0,0,1,6.416,6.415,6.393,6.393,0,0,1-1.863,4.514c-.007.006-.016.009-.023.015s-.009.016-.015.023a6.4,6.4,0,0,1-4.515,1.863A6.422,6.422,0,0,1,3076-1270.679Z" transform="translate(-3074.262 1278.835)" fill="#fff"/>
+    <g id="Grupo_1645" data-name="Grupo 1645" transform="translate(8.557 3.852) rotate(7)">
+      <g id="Grupo_1644" data-name="Grupo 1644">
+        <path id="Trazado_10740" data-name="Trazado 10740" d="M3.969,3.535a.723.723,0,0,0,.3-.977A4.943,4.943,0,0,0,.869.015.723.723,0,0,0,.033.507C.026.531.02.554.015.578a.723.723,0,0,0,.563.854,3.5,3.5,0,0,1,2.415,1.8A.723.723,0,0,0,3.969,3.535Z" fill="#fff"/>
+      </g>
+    </g>
+  </g>
+</svg>

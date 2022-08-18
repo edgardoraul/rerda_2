@@ -1,0 +1,14 @@
+<svg id="Componente_1_1" data-name="Componente 1 – 1" xmlns="http://www.w3.org/2000/svg" width="19" height="18" viewBox="0 0 19 18">
+  <g id="Rectángulo_1951" data-name="Rectángulo 1951" fill="#fff" stroke="#fff" stroke-width="1">
+    <rect width="19" height="18" stroke="none"/>
+    <rect x="0.5" y="0.5" width="18" height="17" fill="none"/>
+  </g>
+  <g id="Rectángulo_1952" data-name="Rectángulo 1952" transform="translate(3 8)" fill="#fff" stroke="#707070" stroke-width="1">
+    <rect width="13" height="2" stroke="none"/>
+    <rect x="0.5" y="0.5" width="12" height="1" fill="none"/>
+  </g>
+  <g id="Rectángulo_1953" data-name="Rectángulo 1953" transform="translate(10.5 2.5) rotate(90)" fill="#fff" stroke="#707070" stroke-width="1">
+    <rect width="13" height="2" stroke="none"/>
+    <rect x="0.5" y="0.5" width="12" height="1" fill="none"/>
+  </g>
+</svg>
