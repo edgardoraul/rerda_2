@@ -16,6 +16,7 @@
 
 # Configuration
 /wp-config.php
+/plugins/woocommerce/
 
 # Example themes
 /wp-content/themes/twenty*/
@@ -45,3 +46,4 @@
 
 ai1wm-backups
 cache
+plugins
