@@ -534,4 +534,229 @@ function display_sku( $template )
 	// Le quito los 2 últimos caracteres para que no muestre ##
 	echo "<small>Código:&nbsp; " . substr($sku, 0, -2) . "</small>";
 }
+
+
+// Remover versiones de los scripts y css innecesarios
+function remove_script_version($src)
+{
+	$parts = explode('?', $src); return $parts[0];
+};
+add_filter('script_loader_src','remove_script_version',15,1);
+add_filter('style_loader_src','remove_script_version',15,1);
+
+
+// Remover clases automáticas del the_post_thumbnail
+function the_post_thumbnail_remove_class( $output )
+{
+	$output = preg_replace( '/class=".*?"/', '', $output );
+	return $output;
+}
+add_filter( 'post_thumbnail_html', 'the_post_thumbnail_remove_class'  );
+
+// Remover clases e ids automáticos de los menúes
+add_filter('nav_menu_css_class', 'my_css_attributes_filter', 100, 1);
+add_filter('nav_menu_item_id', 'my_css_attributes_filter', 100, 1);
+add_filter('page_css_class', 'my_css_attributes_filter', 100, 1);
+function my_css_attributes_filter($var)
+{
+	return is_array($var) ? array_intersect($var, array('current-menu-item', 'current_page_item')) : '';
+};
+
+// Turn off oEmbed auto discovery.
+add_filter( 'embed_oembed_discover', '__return_false' );
+ 
+// Don't filter oEmbed results.
+remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
+ 
+// Remove oEmbed discovery links.
+remove_action('wp_head', 'wp_oembed_add_discovery_links');
+ 
+// Remove oEmbed JavaScript from the front-end and back-end.
+remove_action('wp_head', 'wp_oembed_add_host_js');
+
+// Desactivar el script de embebidos
+function my_deregister_scripts()
+{
+	wp_deregister_script( 'wp-embed' );
+}
+add_action( 'wp_footer', 'my_deregister_scripts' );
+
+//Eliminar css y scripts de comentarios cuando no hagan falta
+function clean_header()
+{
+	wp_deregister_script('comment-reply');
+};
+add_action('init','clean_header');
+
+// Eliminar el atributo rel="category tag".
+function remove_category_list_rel($output)
+{
+	return str_replace(' rel="category tag"','',$output);
+};
+add_filter('wp_list_categories','remove_category_list_rel');
+add_filter('the_category','remove_category_list_rel');
+
+// Deshabilitar Iconos Emoji
+remove_action('wp_head', 'print_emoji_detection_script', 7);
+remove_action('wp_print_styles', 'print_emoji_styles');
+
+// Removiendo el panel de bienvenida del wordpress
+remove_action('welcome_panel', 'wp_welcome_panel');
+
+// Detén las adivinanzas de URLs de WordPress
+add_filter('redirect_canonical','stop_guessing');
+function stop_guessing($url)
+{
+	if(is_404())
+	{
+		return false;
+	}
+	return $url;
+}
+
+// Agregar nofollow a los enlaces externos
+function auto_nofollow( $content )
+{
+    return preg_replace_callback( '/<a>]+/', 'auto_nofollow_callback', $content );
+}
+function auto_nofollow_callback( $matches )
+{
+    $link = $matches[0];
+    $site_link = get_bloginfo('url'); 
+    if (strpos($link, 'rel') === false)
+    {
+        $link = preg_replace("%(href=S(?!$site_link))%i", 'rel="nofollow" $1', $link);
+    }
+    elseif (preg_match("%href=S(?!$site_link)%i", $link))
+    {
+        $link = preg_replace('/rel=S(?!nofollow)S*/i', 'rel="nofollow"', $link);
+    }
+    return $link;
+}
+add_filter('comment_text', 'auto_nofollow');
+
+//Función para Minificar el HTML
+class WP_HTML_Compression
+{
+	protected $compress_css = true;
+	protected $compress_js = true;
+	protected $info_comment = true;
+	protected $remove_comments = true;
+	protected $html;
+	public function __construct($html)
+	{
+		if (!empty($html))
+		{
+			$this->parseHTML($html);
+		}
+	}
+	public function __toString()
+	{
+		return $this->html;
+	}
+	protected function bottomComment($raw, $compressed)
+	{
+		$raw = strlen($raw);
+		$compressed = strlen($compressed);		
+		$savings = ($raw-$compressed) / $raw * 100;		
+		$savings = round($savings, 2);		
+		return '<!-- HTML Minify | Se ha reducido el tamaño de la web un '.$savings.'% | De '.$raw.' Bytes a '.$compressed.' Bytes -->';
+	}
+	protected function minifyHTML($html)
+	{
+		$pattern = '/<(?<script>script).*?<\/script\s*>|<(?<style>style).*?<\/style\s*>|<!(?<comment>--).*?-->|<(?<tag>[\/\w.:-]*)(?:".*?"|\'.*?\'|[^\'">]+)*>|(?<text>((<[^!\/\w.:-])?[^<]*)+)|/si';
+		preg_match_all($pattern, $html, $matches, PREG_SET_ORDER);
+		$overriding = false;
+		$raw_tag = false;
+		$html = '';
+		foreach ($matches as $token)
+		{
+			$tag = (isset($token['tag'])) ? strtolower($token['tag']) : null;
+			$content = $token[0];
+			if (is_null($tag))
+			{
+				if ( !empty($token['script']) )
+				{
+					$strip = $this->compress_js;
+				}
+				else if ( !empty($token['style']) )
+				{
+					$strip = $this->compress_css;
+				}
+				else if ($content == '<!--wp-html-compression no compression-->')
+				{
+					$overriding = !$overriding;
+					continue;
+				}
+				else if ($this->remove_comments)
+				{
+					if (!$overriding && $raw_tag != 'textarea')
+					{
+						$content = preg_replace('/<!--(?!\s*(?:\[if [^\]]+]|<!|>))(?:(?!-->).)*-->/s', '', $content);
+					}
+				}
+			}
+			else
+			{
+				if ($tag == 'pre' || $tag == 'textarea')
+				{
+					$raw_tag = $tag;
+				}
+				else if ($tag == '/pre' || $tag == '/textarea')
+				{
+					$raw_tag = false;
+				}
+				else
+				{
+					if ($raw_tag || $overriding)
+					{
+						$strip = false;
+					}
+					else
+					{
+						$strip = true;
+						$content = preg_replace('/(\s+)(\w++(?<!\baction|\balt|\bcontent|\bsrc)="")/', '$1', $content);
+						$content = str_replace(' />', '/>', $content);
+					}
+				}
+			}
+			if ($strip)
+			{
+				$content = $this->removeWhiteSpace($content);
+			}
+			$html .= $content;
+		}
+		return $html;
+	}
+	public function parseHTML($html)
+	{
+		$this->html = $this->minifyHTML($html);
+		if ($this->info_comment)
+		{
+			$this->html .= "\n" . $this->bottomComment($html, $this->html);
+		}
+	}
+	protected function removeWhiteSpace($str)
+	{
+		$str = str_replace("\t", ' ', $str);
+		$str = str_replace("\n",  '', $str);
+		$str = str_replace("\r",  '', $str);
+		while (stristr($str, '  '))
+		{
+			$str = str_replace('  ', ' ', $str);
+		}
+		return $str;
+	}
+}
+
+function wp_html_compression_finish($html)
+{
+	return new WP_HTML_Compression($html);
+}
+
+function wp_html_compression_start()
+{
+	ob_start('wp_html_compression_finish');
+}
+// add_action('get_header', 'wp_html_compression_start');
 ?>
