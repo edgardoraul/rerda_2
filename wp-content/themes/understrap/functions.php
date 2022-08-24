@@ -596,9 +596,26 @@ function remove_category_list_rel($output)
 add_filter('wp_list_categories','remove_category_list_rel');
 add_filter('the_category','remove_category_list_rel');
 
-// Deshabilitar Iconos Emoji
-remove_action('wp_head', 'print_emoji_detection_script', 7);
-remove_action('wp_print_styles', 'print_emoji_styles');
+// Removes some links from the header
+function remove_headlinks_and_emojis() {
+    remove_action( 'wp_head', 'wp_generator' );
+    remove_action( 'wp_head', 'rsd_link' );
+    remove_action( 'wp_head', 'wlwmanifest_link' );
+    remove_action( 'wp_head', 'start_post_rel_link' );
+    remove_action( 'wp_head', 'index_rel_link' );
+    remove_action( 'wp_head', 'wp_shortlink_wp_head' );
+    remove_action( 'wp_head', 'adjacent_posts_rel_link' );
+    remove_action( 'wp_head', 'adjacent_posts_rel_link_wp_head', 10, 0 );
+    remove_action( 'wp_head', 'parent_post_rel_link' );
+    remove_action( 'wp_head', 'feed_links', 2 );
+    remove_action( 'wp_head', 'feed_links_extra', 3 );
+    remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+    remove_action( 'wp_print_styles', 'print_emoji_styles' );
+    remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+    remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+    remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
+}
+add_action( 'init', 'remove_headlinks_and_emojis' );
 
 // Removiendo el panel de bienvenida del wordpress
 remove_action('welcome_panel', 'wp_welcome_panel');
@@ -634,6 +651,27 @@ function auto_nofollow_callback( $matches )
     return $link;
 }
 add_filter('comment_text', 'auto_nofollow');
+
+// Habilitar svg en imagenes
+function add_file_types_to_uploads($file_types)
+{
+	$new_filetypes = array();
+	$new_filetypes['svg'] = 'image/svg+xml';
+	$file_types = array_merge($file_types, $new_filetypes );
+	return $file_types;
+}
+add_filter('upload_mimes', 'add_file_types_to_uploads');
+
+
+//REMOVE GUTENBERG BLOCK LIBRARY CSS FROM LOADING ON FRONTEND
+function remove_wp_block_library_css()
+{
+	wp_dequeue_style( 'wp-block-library' );
+	wp_dequeue_style( 'wp-block-library-theme' );
+	wp_dequeue_style( 'wc-block-style' ); // REMOVE WOOCOMMERCE BLOCK CSS
+	wp_dequeue_style( 'global-styles' ); // REMOVE THEME.JSON
+}
+add_action( 'wp_enqueue_scripts', 'remove_wp_block_library_css', 100 );
 
 //Función para Minificar el HTML
 class WP_HTML_Compression
@@ -758,5 +796,124 @@ function wp_html_compression_start()
 {
 	ob_start('wp_html_compression_finish');
 }
-// add_action('get_header', 'wp_html_compression_start');
+add_action('get_header', 'wp_html_compression_start');
+
+/**
+ * Minify HTML Output in WordPress
+ *
+ * @author: Pablo López Mestre - https://desarrollowp.com
+ */
+class HtmlCompression {
+    public function __construct() {
+        add_action( 'wp_loaded', self::html_compression_start() );
+    }
+
+    public static function html_compression_start() {
+        ob_start( array( __CLASS__, 'html_compression_finish' ) );
+    }
+
+    public static function html_compression_finish( $html ) {
+        $pattern = '/(?<js><script.*?<\/script\s*>)|(?<css><style.*?<\/style\s*>)|(?<html>(?:[^!\/\w.:-])?[^<]*)/ms';
+
+        preg_match_all( $pattern, $html, $matches, PREG_SET_ORDER );
+
+        // Variable reused for output
+        $output = '';
+
+        foreach ( $matches as $token ) {
+            if ( ! empty( $token['js'] ) ) {
+                $output .= self::minify_js( $token['js'] );
+            } elseif ( ! empty( $token['css'] ) ) {
+                $output .= self::minify_css( $token['css'] );
+            } else {
+                $output .= self::minify_html( $token['html'] );
+            }
+        }
+
+        return $output ?: $html;
+    }
+
+    /**
+     * Minify inline JS
+     *
+     * @param string $content All JS captured by regex.
+     *
+     * @return string
+     */
+    private static function minify_js( string $content = '' ): string {
+        $pattern = array(
+            '/(?<!ftp:|http:|https:|"|\')\s*\/\/[^\n\r]*/ms',
+            // Remove JavaScript Inline comments (Don't remove if it's a URL)
+            '/\/\*.*?\*\//ms',
+            // Remove JavaScript Block comments
+            '/[\n\r\t\v\e\f]/',
+            // Remove all new lines, carriage returns, tabs, vertical whitespaces, esc & form feeds characters
+            '/\s{2,}/s',
+            // Remove all spaces (when there are 2 or more)
+        );
+
+        $replacement = array(
+            '',
+            '',
+            '',
+            ' ',
+        );
+
+        return preg_replace( $pattern, $replacement, $content );
+    }
+
+    /**
+     * Minify inline CSS
+     *
+     * @param string $content All CSS captured by regex.
+     *
+     * @return string
+     */
+    private static function minify_css( string $content = '' ): string {
+        $pattern = array(
+            '/\/\*.*?\*\//ms',
+            // Remove CSS Block comments
+            '/[\n\r\t\v\e\f]/',
+            // Remove all new lines, carriage returns, tabs, vertical whitespaces, esc & form feeds characters
+            '/\s{2,}/s',
+            // Remove all spaces (when there are 2 or more)
+        );
+
+        $replacement = array(
+            '',
+            '',
+            '',
+        );
+
+        return preg_replace( $pattern, $replacement, $content );
+    }
+
+    /**
+     * Minify rest of HTML
+     *
+     * @param string $content All HTML captured by regex.
+     *
+     * @return string
+     */
+    private static function minify_html( string $content = '' ): string {
+        $pattern = array(
+            '/<!--\s.*?-->/',
+            // Remove all HTML comments
+            '/[\n\r\t\v\e\f]/',
+            // Remove all new lines, carriage returns, tabs, vertical whitespaces, esc & form feeds characters
+            '/\s{2,}/',
+            // Remove all spaces (when there are 2 or more)
+        );
+
+        $replacement = array(
+            '',
+            '',
+            ' ',
+        );
+
+        return preg_replace( $pattern, $replacement, $content );
+    }
+}
+//$minify_html = new HtmlCompression();
+
 ?>
